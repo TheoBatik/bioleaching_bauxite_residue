@@ -17,10 +17,15 @@ from scipy import interpolate as interp
 
 # INPUT DATA
 
+# Set base directory
+base_dir = os.getcwd()
+
 # Move to raw data folder
-os.chdir('../data/')
-data_dir = os.getcwd()
-os.chdir(os.path.join(data_dir, 'raw'))
+
+# os.chdir('data')
+# data_dir = os.getcwd()
+
+os.chdir(os.path.join(base_dir, 'data', 'raw'))
 
 # Load the measured concentrations into a pandas dataframe
 c_measured = pd.read_csv('c_measured.csv')
@@ -158,16 +163,30 @@ for column_name in column_names: #.remove('Days'):
         nan_columns.append(column_name)
 # print('NaN Columns', nan_columns)
 
-# Add Water, 1 mg/L?
+# Add Water, 1 mg/L? and 10 L => 10 mg
 
-# OUTPUT PROCESSED DATA
 
-# Move to processed data folder
-os.chdir(data_dir)
+# OUTPUT PREPARED DATA
+
+# Move to prepared data folder
+
+os.chdir(os.path.join(base_dir, 'data'))
 os.makedirs('prepared', exist_ok=True)
-os.chdir(os.path.join(data_dir, 'prepared'))
+os.chdir('prepared')
 
 # Output prepared data to .csv
-c_prepared.to_csv('c_prepared.csv')  
+c_prepared.to_csv('c_prepared.csv') 
+A.tofile('A.csv',sep=',')
+B.tofile('B.csv',sep=',')
+X.tofile('X.csv',sep=',')
 
-# print(c_prepared)
+# Drop 'Day' column (not a state of system)
+c_prepared_no_days = c_prepared.drop(['Day'], axis=1)
+
+# Final input into objective function
+states_measured = c_prepared_no_days.to_numpy()
+
+# Go back to parent
+os.chdir(base_dir)
+
+
