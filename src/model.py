@@ -1,10 +1,14 @@
-from src.input import A, X, states_measured, days
+from src.input import A, X, states_measured, days, hidden_states
 import numpy as np
 
 # PARAMS
 t_step = (days[1] - days[0])*10**(-3)
 t_end = int(days[-1]) # int(states_measured.iloc[-1, 0])
 state_0 = states_measured[0, :] # .iloc[0, 1:].values
+# print('state_0', state_0)
+# print('A', A)
+# print( '\npower state_0, A = ', np.power( state_0, A))
+# print( '\nproduct power = ', np.prod( np.power( state_0, A) , axis=1) )
 N_k = A.shape[0]
 # t_span = (states_measured.iloc[0, 0], states_measured.iloc[-1, 0])
 # T = int(states_measured.iloc[-1, 0])
@@ -40,7 +44,7 @@ def evolve_network( k_exp ):
         # print('\t state_current (before) = \n', state_current)
         # print('\t k_exp (before) = \n', k_exp)
         # k = k_exp
-        mass_action_vector = np.power( 2, k_exp.copy() ) 
+        # mass_action_vector = np.power( 2, k_exp.copy() ) 
 
         # print('\t state_current (before) = \n', state_current[0:5])
         
@@ -48,12 +52,14 @@ def evolve_network( k_exp ):
         # mass_action_vector = k
         # print('MAV (before)', mass_action_vector[0:5] )
         
-        for r in range(N_k):
+        # for r in range(N_k):
             # print('r =', r)
             # print(A[r,:])
             # print(np.prod( np.power(state_current, A[r,:]) ))
-            mass_action_vector[r] *= np.prod( np.power(state_current, A[r,:]) ) # Copy state_current to make it the same shape as A[:,:]
-
+        # print('\npower = ', np.power(state_current, A[:,:]) )
+        # print('product = ', np.prod( np.power(state_current, A[:,:]), axis=1 ))
+        mass_action_vector = np.multiply( np.power( 2, k_exp.copy() ), np.prod( np.power(state_current, A[:,:] ), axis=1 )) # Copy state_current to make it the same shape as A[:,:]
+        # print( 'mass_action_vector = ', mass_action_vector )
         # print('\t MAV (after) = ', mass_action_vector[0:5])
 
         # Compute the concetration vector for the next step, c_next = c(t + 1)  

@@ -22,7 +22,7 @@ base_dir = os.getcwd()
 os.chdir(os.path.join(base_dir, 'data', 'raw'))
 
 # Load the measured concentrations into a pandas dataframe
-c_measured = pd.read_csv('c_measured.csv')
+c_measured = pd.read_csv('2_measured_states.csv')
 
 # Define function to load .csv for the stoich. matrices and normalize each row
 def load_csv(file_name):
@@ -40,15 +40,31 @@ def load_csv(file_name):
     return matrix, header
 
 # Define the stoich. matrices A & B
-A, A_header = load_csv('A')
-B, B_header = load_csv('B')
+A, A_header = load_csv('2_A')
+B, B_header = load_csv('2_B')
 
 # Define the stoich. matrix, X = B - A
 X = B - A
-# X = np.vstack((X, -X)) # stacks the stoic. coefficients of the reverse reactions (-X) onto that of the forward reactions (X)
+X = np.vstack( (X, -X) ) # stacks the stoic. coefficients of the reverse reactions (-X) onto that of the forward reactions (X)
 X = X.transpose() # such that # columns = # reactions & # rows = # species
-# A = np.vstack((A, -A))
+A = np.vstack( (A, B) )
 
+# Check species are consistent across A, B, and c_measured
+c_header = c_measured.columns[1:]
+N_c = len( A_header )
+for i in range( N_c ):
+    consistent = bool( c_header[i] == A_header[i] and c_header[i] == B_header[i] )
+    if not consistent:
+        print( f'Species mismatch on column {i}: ', c_header[i], A_header[i], B_header[i] )
+
+# Store header indices for hidden states (prefixed 'H_')
+hidden_states = []
+for i, species in enumerate(A_header):
+    prefix = species[0:2]
+    # print(prefix)
+    if prefix == 'H_':
+        hidden_states.append(i)
+# print('\n', hidden_states)
 
 # DATA CLEANING and pH CONVERSION
 
@@ -58,26 +74,27 @@ n = len(c_measured)
 #  Turn all zeros (missing raw data) into NaN's, for IC in list of Interfering Compounds
 columns = ['Fe'] # list of IC's
 for ic in columns:
-    for i in range(n):
-        value = int(c_measured.loc[i, [ic]].values)
-        if value == 0:
-            c_measured.loc[i, [ic]] = np.nan
+    if ic in c_measured.columns:
+        for i in range(n):
+            value = int(c_measured.loc[i, [ic]].values)
+            if value == 0:
+                c_measured.loc[i, [ic]] = np.nan
 
 # Convert micro-grams into miligrams, for REE in list of Rare Earth Elements
-columns = ['Sc']
+columns = ['Sc_aqueous']
 for ree in columns:
     for i in range(n):
         c_measured.loc[i, [ree]] *= 0.001 
 
 # Add empty column to be populated with [H+]
-empty_column = np.zeros(n)
-c_measured['H+'] = empty_column
+# empty_column = np.zeros(n)
+# c_measured['H+'] = empty_column
 
 # Convert each pH to [H+], then drop pH column
-for i in range(n):
-    pH = c_measured.loc[i, 'pH']
-    c_measured.loc[i, 'H+'] = 10**(-pH)
-c_measured = c_measured.drop(['pH'], axis=1)
+# for i in range(n):
+#     pH = c_measured.loc[i, 'pH']
+#     c_measured.loc[i, 'H+'] = 10**(-pH)
+# c_measured = c_measured.drop(['pH'], axis=1)
 
 # Create an empty template like c_measured - to be altered & populated
 c_prepared = pd.DataFrame(columns=c_measured.columns)
@@ -160,7 +177,7 @@ os.makedirs('prepared', exist_ok=True)
 os.chdir('prepared')
 
 # Output prepared data to .csv
-c_prepared.to_csv('c_prepared.csv') 
+c_prepared.to_csv('2_prepared_states.csv') 
 A.tofile('A.csv',sep=',')
 B.tofile('B.csv',sep=',')
 X.tofile('X.csv',sep=',')

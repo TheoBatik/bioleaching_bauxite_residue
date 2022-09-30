@@ -1,13 +1,15 @@
+# VALIDATIONS - test system
 # Test the model and optimization algorithm
-# On the following system of two species:
+# on the system defined by:
     # x1 -> x2 (k1)
     # x2 -> x1 (k2)
+
 
 # Imports
 import numpy as np
 import matplotlib.pyplot as plt 
 from src.model import evolve_network_for_test
-from src.optimise import CustomHop, basinhopping, minimizer_kwargs
+from src.objective import CustomHop, basinhopping, minimizer_kwargs
 
 
 # Stoichiometry
@@ -22,7 +24,7 @@ x0 = np.array( [ 1, 0] )
 print( '\nTarget kinetics, k = ', np.power( 2, k_exp) )
 
 
-# Evolve network to generate simulation data (pseudo-measurements)
+# Evolve network to generate simulation data ( "pseudo-measurements" )
 t_step = 0.01
 N_t = 200
 x_simulated = evolve_network_for_test(k_exp, x0, A, Q, t_step, N_t)
@@ -64,12 +66,12 @@ def track_convergence(k, f, accepted):
 
 # Optimise kinetics - global minimization
 print('\nStart basinhoppping...')
-n_iterations = 2
+n_iterations = 5
 display = False
 stepsize = 0.5
 custom_hop = CustomHop(stepsize)
 N = 0
-N_max = 1
+N_max = 4
 while N < N_max:
     print('\nN = ', N)
     global_minimizer = basinhopping(objective_for_test, k_estimate_exp, minimizer_kwargs=minimizer_kwargs, T=500,
@@ -82,7 +84,7 @@ k_optimal = np.power( 2, k_exp_tracker[-1] )
 x_predicted_best = evolve_network_for_test( k_optimal, x0, A, Q, t_step, N_t )
 
 
-# Visualise - Actual vs Prediction
+# Visualise - Actual vs Predicted states
 t_stop = t_step * N_t + t_step
 time = np.arange(0, t_stop, t_step)
 fig = plt.figure()
@@ -91,17 +93,19 @@ plt.plot(time, x_predicted_best[:, 0], color='green', linestyle='--', linewidth=
 plt.plot(time, x_predicted_best[:, 1], color='blue', linestyle='--', linewidth=1, markersize=0 ) #marker='o', markersize=0.4 )
 plt.plot(time, x_simulated[:, 0], color='green', linestyle='-', linewidth=1, markersize=0 )
 plt.plot(time, x_simulated[:, 1], color='blue', linestyle='-', linewidth=1, markersize=0 )
-plt.savefig('Actual vs Prediction.png')
-
-print(k_optimal)
+fig.tight_layout()
+plt.savefig('Test System - actual and predicted states over time.png')
 
 
 # Visualise - Convergence
-fig, axs = plt.subplots( 2 )
-# iterations = np.arange( 1, len( k_exp_tracker ) )
-# axs[ 0 ].plot( iterations, k_exp_tracker[ : ], 'o' )
-plt.savefig('Kinetic parameters over iterations.png')
-
-# axs[0].set_title( 'Prediction' )
-# axs[1].plot( x_simulated, time, '-' )
-# axs[1].set_title( 'Actual' )
+k_converging = np.power( 2, k_exp_tracker )
+iterations = np.arange( 0, len( k_exp_tracker ) )
+fig, axs = plt.subplots( 3 )
+axs[ 0 ].plot( iterations, k_converging[ : , 0], 'o', linestyle='--', linewidth=1 )
+axs[ 0 ].set_title( 'Kinetic param. 1' )
+axs[ 1 ].plot( iterations, k_converging[ : , 1], 'o' , linestyle='--', linewidth=1 )
+axs[ 1 ].set_title( 'Kinetic param. 2' )
+axs[ 2 ].plot( iterations, objective_tracker, 'o' , linestyle='--', linewidth=1 )
+axs[ 2 ].set_title( 'Objective function value' )
+fig.tight_layout()
+plt.savefig('Test system - kinetic parameters and objective by iteration.png')
