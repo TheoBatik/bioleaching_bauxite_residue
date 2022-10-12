@@ -3,32 +3,37 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import solve_ivp
 from scipy.optimize import basinhopping
-
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 class CustomBasinHop:
     def __init__(self, stepsize=1):
         self.stepsize = stepsize
     def __call__(self, k):
         s = self.stepsize
-        high = np.log2( 2 - 2**(-s) ) # Adjust upper step to account for k being exponentiated
-        random_step = np.random.uniform(low=-s, high=high, size=k.shape)
+        # high = np.log2( 2 - 2**(-s) ) # Adjust upper step to account for k being exponentiated
+        random_step = np.random.uniform(low=-s, high=s, size=k.shape)
         k += random_step
         return k
 
 
 class KineticFitter:
 
-    # Initialise
     def __init__( self ):
 
         self.base_dir = os.getcwd()
         self.objective_tracker = []
         self.k_expo_tracker = []
         self.custom_hop = CustomBasinHop()
+        self.evolve_net_method = 'LSODA'
         self.minimizer_kwargs = {"method": "L-BFGS-B"}
         self.k_expo_low = -1
         self.k_expo_high = 6
+        self.display = True
 
+
+    # INPUT
+    
     # Function to load the .csv for the stoich. matrices + normalize each row    
     def load_csv( self, file_name ):
             matrix = []
@@ -43,7 +48,6 @@ class KineticFitter:
                     matrix.append( row_normalized )
             matrix = np.asarray( matrix )
             return matrix, header
-
 
     # Sets the stoichiometry
     def set_stoichiometry( self, csv_A, csv_B ):
@@ -73,7 +77,6 @@ class KineticFitter:
         # Move back to base directory
         os.chdir( self.base_dir )
 
-
     # Inputs the raw data 
     def input_raw_data( self, csv_raw_data ):
         os.chdir( os.path.join(self.base_dir, 'data', 'raw') ) # Move to 'raw' data folder
@@ -82,7 +85,6 @@ class KineticFitter:
         setattr( self, 'raw_data', raw_data )
         setattr( self, 'header_raw', header_raw )
         os.chdir( self.base_dir ) # Move back to base directory
-
 
     # Checks that the species listed in all input headers match each other
     def check_consistency_across_inputs( self ):
@@ -98,7 +100,6 @@ class KineticFitter:
         setattr( self, 'N_k', N_k )
         setattr( self, 'N_t', N_t )
 
-
     # Store header indices for hidden states (prefixed 'H_')
     def set_hidden_states( self ):
         hidden_states = []
@@ -107,7 +108,6 @@ class KineticFitter:
             if prefix == 'H_':
                 hidden_states.append(i)
         setattr( self, 'hidden_states', hidden_states )
-
 
     # Clean measured data
     def clean_measured_data( self ):
@@ -125,18 +125,18 @@ class KineticFitter:
         setattr( self, 'clean_data', clean_data )
 
 
+    # MODEL 
+
     # Reaction network
     def reaction_network( self, t, state, *kinetics_exp ):
         state_dot = self.X.dot( np.multiply( np.power( 2, kinetics_exp ), np.prod( np.power( np.clip(state, 0, None) , self.A[:,:] ), axis=1 )) )
         return state_dot
     
-
     # Set the initial conditions
     def set_initial_conditions( self ):
         clean_data_np = self.clean_data.to_numpy()
         state_0 = clean_data_np[0, 1:]
         setattr( self, 'state_0', state_0)
-
 
     # Sets the points in time at which the states are to be predicted + the time span
     def set_evalutation_times( self ):
@@ -145,12 +145,13 @@ class KineticFitter:
         setattr( self, 'times', times )
         setattr( self, 't_span', t_span )
 
-
     # Evolve netork / predict states
     def evolve_network( self,  k_exp ):
-        result = solve_ivp( self.reaction_network, self.t_span, self.state_0, args=k_exp, t_eval=self.times, method='LSODA')
+        result = solve_ivp( self.reaction_network, self.t_span, self.state_0, args=k_exp, t_eval=self.times, method=self.evolve_net_method)
         return result.y # .T
 
+
+    # OPTIMISATION
 
     # Prepare data for the objective function
     def prepare_data_for_optimisation( self ):
@@ -177,7 +178,6 @@ class KineticFitter:
         setattr( self, 'column_maxes', column_maxes )
         setattr( self, 'measured_visible_states_norm', visible_states_norm )
 
-
     # Objective function
     def objective( self, k_expo ):
                
@@ -199,44 +199,45 @@ class KineticFitter:
 
         return error_squared
 
-
-    def track_convergence( self, k, f, accepted):
-        if f < self.objective_tracker[-1]: # and accepted 
+    def track_convergence( self, k, f, accepted ):
+        if abs(f - self.objective_tracker[-1]) < 1e-3: # and accepted 
             self.objective_tracker.append(f)
             self.k_expo_tracker.append(k)
-
 
     def fetch_random_k_expo( self ):
         k_expo = np.around( np.random.uniform( low=self.k_expo_low, high=self.k_expo_high, size=self.N_k ), 2 )
         return k_expo
 
-
     # Optimise kinetic parameters
-    def fit_kinetics_by_basinhopping( self, n_epochs, n_iters, k_expo, display=False):
+    def fit_kinetics_by_basin_hopping( self, n_epochs, n_iters, k_expo, display=False):
         
+        setattr(self, 'display', display)
+        # pull out vars into the local space!?
+
         # Setup
         self.k_expo_tracker.append( k_expo )
         self.objective_tracker.append( self.objective( k_expo ) )
         
         N = 0
-        T = 0 # temperature
+        T = 0.5 # temperature
         while N < n_epochs:
             
             if display:
                 print('Epoch ', N)
             
             # Minimise globally
-            global_minimiser = basinhopping(self.objective, k_expo, minimizer_kwargs=self.minimizer_kwargs, T=T,
+            basinhopping(self.objective, self.fetch_random_k_expo(), minimizer_kwargs=self.minimizer_kwargs, T=T,
                         niter=n_iters, disp=display, take_step=self.custom_hop, callback=self.track_convergence)
 
-            # Update temperature and kinetics
-            delta_obj = self.objective_tracker[-2] - self.objective_tracker[-1]
-            T = delta_obj
-            if delta_obj < 10e-5:
-                T = 1/delta_obj
-                k_expo = self.fetch_random_k_expo()
-            else:
-                k_expo = self.k_expo_tracker[-1] # global_minimizer.x
+            # Update 'temperature' and kinetics
+            # k_expo = 
+            # delta_obj = self.objective_tracker[-2] - self.objective_tracker[-1]
+            # if delta_obj < 10e-4:
+            #     T = 1/delta_obj
+            #     k_expo = self.fetch_random_k_expo()
+            # else:
+            #     T = delta_obj
+            #     k_expo = self.k_expo_tracker[-1] # global_minimizer.x
 
             # Update counter
             N += 1
@@ -246,7 +247,49 @@ class KineticFitter:
         k_optimal = k_tracker[-1]
         lowest_objective = self.objective_tracker[-1]
         best_prediction = self.evolve_network( self.k_expo_tracker[-1] )
+        iterations = np.arange( 0, len( k_tracker ) )
         setattr( self, 'k_tracker', k_tracker)
         setattr( self, 'k_optimal', k_optimal)
         setattr( self, 'lowest_objective', lowest_objective)
         setattr( self, 'best_prediction', best_prediction)
+        setattr( self, 'iterations', iterations)
+        setattr(self, 'display', False)
+
+
+    # RESULTS
+
+    # Plot objective function values over iterations
+    def plot_objective_by_iteration( self ):
+        iterations = self.iterations[1:] # remove initial estimate
+        objective_tracker = self.objective_tracker[1:]
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        title = 'Objective function value by iteration ' + now
+        fig = plt.figure()
+        plt.plot( iterations, objective_tracker, 'o', linestyle='--', linewidth=1, markersize=0.1)
+        plt.savefig( os.path.join( 'results', title ) )
+
+    # Plot kinetic parameters by iteration
+    def plot_kinetics_by_iteration( self ):
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        title = 'Kinetic parameter values by iteration number ' + now
+        fig, axs = plt.subplots( 3, 2 )
+        for i in range(3):
+            axs[ i, 0 ].plot( self.iterations, self.k_tracker[ : , i], 'o', linestyle='--', linewidth=1, markersize=0.1 )
+            axs[ i, 0 ].set_title( f'Kinetic param. {i}' )
+            axs[ i, 1 ].plot( self.iterations, self.k_tracker[ : , i + 3], 'o', linestyle='--', linewidth=1, markersize=0.1 )
+            axs[ i, 1 ].set_title( f'Kinetic param. {i + 3}' )
+        fig.tight_layout()
+        plt.savefig( os.path.join( 'results', title ) )
+
+    # Plot predicted visible states against those measured
+    def plot_predicted_vs_measured( self ):
+        title = 'Concetration of citric acid and Sc (aq) over time'
+        fig, axs = plt.subplots( 2 )
+        axs[0].plot( self.times, self.best_prediction[0, :], color='green', linestyle='--', linewidth=1, markersize=0 )
+        axs[0].plot( self.times, self.clean_data[:, 0], color='blue', linestyle='-', linewidth=1, markersize=0 )
+        axs[0].set_title( self.header_raw[0] )
+        axs[1].plot( self.times, self.best_prediction[-2, :], color='green', linestyle='--', linewidth=1, markersize=0 )
+        axs[1].plot( self.times, self.clean_data[:, -2], color='blue', linestyle='-', linewidth=1, markersize=0 )
+        axs[1].set_title( str( self.header_raw[-2] ) )
+        fig.tight_layout()
+        plt.savefig( os.path.join( 'results', title ) )
