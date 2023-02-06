@@ -8,6 +8,8 @@ numpy = "*"
 pandas = "*"
 scipy = "*"
 matplotlib = "*"
+chempy = "*"
+pytest = "*"
 
 [dev-packages]
 

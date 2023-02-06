@@ -129,7 +129,8 @@ class KineticFitter:
 
     # Reaction network
     def reaction_network( self, t, state, *kinetics_exp ):
-        state_dot = self.X.dot( np.multiply( np.power( 2, kinetics_exp ), np.prod( np.power( np.clip(state, 0, None) , self.A[:,:] ), axis=1 )) )
+        mass_action = np.multiply( np.power( 2, kinetics_exp ), np.prod( np.power( np.clip(state, 0, None) , self.A[:,:] ), axis=1 ))
+        state_dot = self.X.dot( mass_action )
         return state_dot
     
     # Set the initial conditions
@@ -204,15 +205,13 @@ class KineticFitter:
             self.objective_tracker.append(f)
             self.k_expo_tracker.append(k)
 
-    def fetch_random_k_expo( self ):
-        k_expo = np.around( np.random.uniform( low=self.k_expo_low, high=self.k_expo_high, size=self.N_k ), 2 )
-        return k_expo
+    def fetch_random_k_expo( self ): 
+        return np.around( np.random.uniform( low=self.k_expo_low, high=self.k_expo_high, size=self.N_k ), 2 )
 
     # Optimise kinetic parameters
-    def fit_kinetics_by_basin_hopping( self, n_epochs, n_iters, k_expo, display=False):
+    def fit_kinetics_by_basinhopping( self, n_epochs, n_iters, k_expo, display=False):
         
         setattr(self, 'display', display)
-        # pull out vars into the local space!?
 
         # Setup
         self.k_expo_tracker.append( k_expo )
@@ -226,8 +225,8 @@ class KineticFitter:
                 print('Epoch ', N)
             
             # Minimise globally
-            basinhopping(self.objective, self.fetch_random_k_expo(), minimizer_kwargs=self.minimizer_kwargs, T=T,
-                        niter=n_iters, disp=display, take_step=self.custom_hop, callback=self.track_convergence)
+            a = basinhopping(self.objective, self.fetch_random_k_expo(), minimizer_kwargs=self.minimizer_kwargs, T=T,
+                        niter=n_iters, disp=display, take_step=self.custom_hop, callback=None)#self.track_convergence)
 
             # Update 'temperature' and kinetics
             # k_expo = 
@@ -243,6 +242,7 @@ class KineticFitter:
             N += 1
 
         # Update attributes
+        print( 'Results', a.x, a.fun )
         k_tracker = np.power( 2, self.k_expo_tracker )
         k_optimal = k_tracker[-1]
         lowest_objective = self.objective_tracker[-1]
@@ -258,32 +258,40 @@ class KineticFitter:
 
     # RESULTS
 
+    # Save results to .csv
+    def results_to_csv(self, out_folder='results'):
+        out_dir = os.path.join( self.base_dir, out_folder )
+        objectives = self.objective_tracker[1:]
+        kinetics = self.k_tracker
+        k_optimal = kinetics[-1]
+        np.savetxt( os.path.join(out_dir, 'objectives.csv'), objectives, delimiter=",")
+        np.savetxt( os.path.join(out_dir, 'kinetics.csv'), kinetics, delimiter=",")
+        np.savetxt( os.path.join(out_dir, 'k_optimal.csv'), k_optimal, delimiter=",")
+
     # Plot objective function values over iterations
-    def plot_objective_by_iteration( self ):
+    def plot_objective_by_iteration( self, title ):
+        title += ' ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         iterations = self.iterations[1:] # remove initial estimate
         objective_tracker = self.objective_tracker[1:]
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        title = 'Objective function value by iteration ' + now
         fig = plt.figure()
         plt.plot( iterations, objective_tracker, 'o', linestyle='--', linewidth=1, markersize=0.1)
         plt.savefig( os.path.join( 'results', title ) )
 
     # Plot kinetic parameters by iteration
-    def plot_kinetics_by_iteration( self ):
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        title = 'Kinetic parameter values by iteration number ' + now
+    def plot_kinetics_by_iteration( self, title ):
+        title += ' ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         fig, axs = plt.subplots( 3, 2 )
         for i in range(3):
             axs[ i, 0 ].plot( self.iterations, self.k_tracker[ : , i], 'o', linestyle='--', linewidth=1, markersize=0.1 )
-            axs[ i, 0 ].set_title( f'Kinetic param. {i}' )
+            axs[ i, 0 ].set_title( f'Kinetic parameter {i}' )
             axs[ i, 1 ].plot( self.iterations, self.k_tracker[ : , i + 3], 'o', linestyle='--', linewidth=1, markersize=0.1 )
-            axs[ i, 1 ].set_title( f'Kinetic param. {i + 3}' )
+            axs[ i, 1 ].set_title( f'Kinetic parameter {i + 3}' )
         fig.tight_layout()
         plt.savefig( os.path.join( 'results', title ) )
 
     # Plot predicted visible states against those measured
-    def plot_predicted_vs_measured( self ):
-        title = 'Concetration of citric acid and Sc (aq) over time'
+    def plot_predicted_vs_measured( self, title ):
+        title += ' ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
         fig, axs = plt.subplots( 2 )
         axs[0].plot( self.times, self.best_prediction[0, :], color='green', linestyle='--', linewidth=1, markersize=0 )
         axs[0].plot( self.times, self.clean_data[:, 0], color='blue', linestyle='-', linewidth=1, markersize=0 )
