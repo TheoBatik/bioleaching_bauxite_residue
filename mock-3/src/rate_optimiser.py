@@ -230,8 +230,22 @@ class RateOptimiser:
             # finally:
             n += 1
 
-        # Set optimal rates attribute
+        # Set optimal reaction rates
         setattr( self, 'optimal_rate_params', 2 ** rate_params_ex )
+
+        # Get optimal prediction:
+        self.reaction_system.update_rate_params( self.optimal_rate_params )
+        ode_system, _ = get_odesys( self.reaction_system )
+        states_p = ode_system.integrate(
+            self.eval_times, #sorted(np.concatenate((np.linspace(0, 23), np.logspace(-8, 1)))), #self.eval_times, # evaluation times
+            self.states_0,  # initial states
+            atol=1,#1e-12,  
+            rtol=1# 1e-13
+        )
+
+        # Set predicted states attribute
+        setattr( self, 'states_p', states_p )
+
         return rate_params_ex
 
 #------------------------------------------------------------------------------------------
@@ -239,21 +253,18 @@ class RateOptimiser:
     def save_results( self, eval_times=None ):
 
         if eval_times is None:
+            # Use existing attributes
             eval_times = self.eval_times
-
-        # Update the rate params of the reaction system 
-        self.reaction_system.update_rate_params( self.optimal_rate_params )
-
-        # Convert to ODE system
-        ode_system, _ = get_odesys( self.reaction_system )
-
-        # Solve the ODE system (states predicted)
-        states_p = ode_system.integrate(
-            eval_times, #sorted(np.concatenate((np.linspace(0, 23), np.logspace(-8, 1)))), #self.eval_times, # evaluation times
-            self.states_0,  # initial states
-            atol=1,#1e-12,  
-            rtol=1# 1e-13
-        )
+            states_p = self.states_p
+        else:
+            # Given new output times, derive a new prediction 
+            ode_system, _ = get_odesys( self.reaction_system )
+            states_p = ode_system.integrate(
+                eval_times, #sorted(np.concatenate((np.linspace(0, 23), np.logspace(-8, 1)))), #self.eval_times, # evaluation times
+                self.states_0, # initial states
+                atol=1,#1e-12,
+                rtol=1# 1e-13
+            )
 
         # Save results to .csv
         print( 'Predicted states', states_p.yout )
@@ -265,7 +276,7 @@ class RateOptimiser:
         # Plot predicted states
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
         for ax in axes:
-            ignore = ['H2O', 'ScO(OH)']
+            ignore = ['H2O', 'ScO(OH)', 'C6H8O7']
             only = ['C6H8O7']
             _ = states_p.plot( names=[k for k in self.reaction_system.substances if k not in ignore], ax=ax)
             _ = ax.legend(loc='best', prop={'size': 9})
