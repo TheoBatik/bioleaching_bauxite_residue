@@ -69,20 +69,28 @@ class RateOptimiser:
 
         # Stoichiometric coefficients of reactants and products
         reactants = [
+            # Citric acid
             {'ScO(OH)': 1, 'C6H8O7': 3},
-            {'ScO(OH)': 2, 'C6H8O7': 3},
-            {'ScO(OH)': 3, 'C6H8O7': 3},
-            {'Fe2O3': 1, 'C6H8O7': 6},
-            {'Fe2O3': 1, 'C6H8O7': 3},
-            {'Fe2O3': 3, 'C6H8O7': 6}
+            # {'ScO(OH)': 2, 'C6H8O7': 3},
+            # {'ScO(OH)': 3, 'C6H8O7': 3},
+            {'Fe2O3': 1, 'H+': 6},
+            # {'Fe2O3': 1, 'C6H8O7': 3},
+            # {'Fe2O3': 3, 'C6H8O7': 6}
+            # Oxalic acid
+            {'ScO(OH)': 1, 'C2H2O4': 1},
+            # {'Fe2O3': 1, 'C2H2O4': 6},
         ]
         products = [
-            {'Sc': 1, 'C6H7O7': 3 }, #, 'H2O': 2},
-            {'Sc': 2, 'C6H6O7': 3 }, #, 'H2O': 4},
-            {'Sc': 3, 'C6H5O7': 3 }, #, 'H2O': 6},
-            {'Fe': 2, 'C6H7O7': 6 }, #, 'H2O': 3},
-            {'Fe': 2, 'C6H6O7': 3 }, #, 'H2O': 3},
-            {'Fe': 6, 'C6H5O7': 6 } #, 'H2O': 9}
+            # Citric acid
+            {'Sc': 1, 'C6H7O7': 3 }, #,'H2O': 2}, # }, 
+            # {'Sc': 2, 'C6H6O7': 3 }, #, 'H2O': 4},
+            # {'Sc': 3, 'C6H5O7': 3 }, #, 'H2O': 6},
+            {'Fe': 2, 'C6H7O7': 6 }, # 'H2O': 3}, #
+            # {'Fe': 2, 'C6H6O7': 3 }, #, 'H2O': 3},
+            # {'Fe': 6, 'C6H5O7': 6 } #, 'H2O': 9}
+            # Oxalic acid
+            {'Sc': 1, 'C2HO4': 1 }, #, 'H2O': 2},
+            # {'Fe': 2, 'C6H7O7': 6 }, #, 'H2O': 3},
         ]
 
         # Number of reactions (one-directional)
@@ -263,25 +271,48 @@ class RateOptimiser:
         np.savetxt('results/kinetics/optimal_rate_params.csv', self.optimal_rate_params, delimiter=',')
 
         # Plot predicted and measured states
+        colours = plt.cm.rainbow(np.linspace(0, 1, len(self.species)))
         ignore = ['H2O', 'ScO(OH)', 'C6H7O7', 'C6H6O7', 'C6H5O7', 'OH', 'Fe2O3']
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
         for ax in axes:
-            if predicted:
             # Plot predicted states
-                _ = states_p.plot( 
-                    names=[k for k in self.reaction_system.substances if k not in ignore], 
-                    ax=ax
+            for i, s in enumerate( self.species ):
+                if s not in ignore:
+                    if predicted:
+                        ax.plot( 
+                            self.eval_times,
+                            states_p.yout[:, i],
+                            linestyle='dashed',
+                            label=s + ' (predicted)',
+                            c=colours[i]
                     )
-            if measured:
-                # Plot measured states
-                for i, s in enumerate( self.species_m ):
-                    ax.plot( 
-                        self.eval_times, \
-                        self.states_m[:, i], \
-                        linestyle = 'None', \
-                        marker='.', \
-                        label=s + ' measured'
+                    if measured and s in self.species_m:
+                        j = self.species_m.index(s)
+                        ax.plot( 
+                        self.eval_times,
+                        self.states_m[:, j],
+                        linestyle = 'None',
+                        marker='.',
+                        ms=6,
+                        label=s + ' (measured)',
+                        c=colours[i]
                     )
+                       
+                        
+                # # _ = states_p.plot( 
+                # #     names=[k for k in self.reaction_system.substances if k not in ignore], 
+                # #     ax=ax
+                # #     )
+                # if measured:
+                # # Plot measured states
+                #     for i, s in enumerate( self.species_m ):
+                #         ax.plot( 
+                #             self.eval_times, \
+                #             self.states_m[:, i], \
+                #             linestyle = 'None', \
+                #             marker='.', \
+                #             label=s + ' (measured)'
+                #         )
             # Set legend and axes' lables
             _ = ax.legend(loc='best', prop={'size': 9})
             _ = ax.set_xlabel('Time (days)')
