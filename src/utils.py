@@ -9,7 +9,6 @@ def load_csv( csv_name='measured_data' ):
             if i == 0:
                 header = list( line.strip().split(',') )
                 continue
-            print(line)
             row = [float(item) for item in line.strip().split(',')]
             matrix.append(row)
     matrix = np.asarray( matrix )

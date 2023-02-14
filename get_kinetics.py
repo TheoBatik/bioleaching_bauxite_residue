@@ -2,10 +2,7 @@
 # ESTIMATING THE KINETIC PARAMETERS FOR SULFIDE MINERAL BIOLEACHING SYSTEM
 #------------------------------------------------------------------------------------------
 
-import numpy as np
-
 # Setup
-
 from src.rate_optimiser import RateOptimiser
 from src.utils import load_csv, fetch_initial_states
 
@@ -23,9 +20,10 @@ for rxn in ropter.reaction_system.rxns:
 #------------------------------------------------------------------------------------------
 
 ropter.input( 
-    load_csv( csv_name='measured_data' ),
-    fetch_initial_states( ropter.species, csv_name='c0_base_best' ) 
+    load_csv( csv_name='measured_data_oxalic' ),
+    fetch_initial_states( ropter.species, csv_name='c0_base_test_oxalic' ) 
 ) 
+
 #------------------------------------------------------------------------------------------
 
 # Checks 
@@ -56,6 +54,7 @@ ropter.save_results(
     #     np.logspace(-5, -3, base=2),
     #     # ))
     # # ),
+    #ignore=[],
     predicted=True, 
     measured=True
 )

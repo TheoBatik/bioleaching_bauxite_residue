@@ -6,7 +6,6 @@ from chempy import ReactionSystem
 from chempy.kinetics.ode import get_odesys
 import numpy as np
 from scipy.optimize import basinhopping
-# from chempy.units import SI_base_registry, default_units
 import matplotlib.pyplot as plt
 
 
@@ -73,7 +72,7 @@ class RateOptimiser:
             {'ScO(OH)': 1, 'C6H8O7': 3},
             # {'ScO(OH)': 2, 'C6H8O7': 3},
             # {'ScO(OH)': 3, 'C6H8O7': 3},
-            {'Fe2O3': 1, 'H+': 6},
+            {'Fe2O3': 1, 'C6H8O7': 6},
             # {'Fe2O3': 1, 'C6H8O7': 3},
             # {'Fe2O3': 3, 'C6H8O7': 6}
             # Oxalic acid
@@ -85,7 +84,7 @@ class RateOptimiser:
             {'Sc': 1, 'C6H7O7': 3 }, #,'H2O': 2}, # }, 
             # {'Sc': 2, 'C6H6O7': 3 }, #, 'H2O': 4},
             # {'Sc': 3, 'C6H5O7': 3 }, #, 'H2O': 6},
-            {'Fe': 2, 'C6H7O7': 6 }, # 'H2O': 3}, #
+            {'Fe': 2, 'C6H7O7': 3 }, # 'H2O': 3}, #
             # {'Fe': 2, 'C6H6O7': 3 }, #, 'H2O': 3},
             # {'Fe': 6, 'C6H5O7': 6 } #, 'H2O': 9}
             # Oxalic acid
@@ -246,7 +245,7 @@ class RateOptimiser:
 
 #------------------------------------------------------------------------------------------
 
-    def save_results( self, eval_times=None, predicted=True, measured=True ):
+    def save_results( self, eval_times=None, ignore=None, predicted=True, measured=True ): 
 
         # Update predicted states, if required
         if eval_times is None:
@@ -271,8 +270,9 @@ class RateOptimiser:
         np.savetxt('results/kinetics/optimal_rate_params.csv', self.optimal_rate_params, delimiter=',')
 
         # Plot predicted and measured states
+        if ignore is None:
+            ignore = [ s for s in self.species if s not in self.species_m]
         colours = plt.cm.rainbow(np.linspace(0, 1, len(self.species)))
-        ignore = ['H2O', 'ScO(OH)', 'C6H7O7', 'C6H6O7', 'C6H5O7', 'OH', 'Fe2O3']
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
         for ax in axes:
             # Plot predicted states
@@ -320,32 +320,9 @@ class RateOptimiser:
         # Adjust 2nd axis scale
         _ = axes[1].set_xscale('log')
         _ = axes[1].set_yscale('log')
+        axes[0].set_title('Normal scale', loc='left')
+        axes[1].set_title('Log scale', loc='left')
         # Tidy and save
+        fig.suptitle( 'The predicted and measured concentrations over time', fontsize=16 )
         _ = fig.tight_layout()
         _ = fig.savefig('results/plots/test_k_optimal_predicted.png', dpi=72)
-
-        # # Plot measured states
-        # fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-        # for ax in axes:
-        #     for i, s in enumerate( self.species_m ):
-        #         ax.plot( 
-        #             self.eval_times, \
-        #             self.states_m[:, i], \
-        #             linestyle = 'None', \
-        #             marker='.', \
-        #             label=s 
-        #         )
-        #     # ax.plot( 
-        #     #     self.eval_times, \
-        #     #     self.states_m[:, 1], \
-        #     #     linestyle = 'None', \
-        #     #     marker='.', \
-        #     #     label='Sc' )
-        #     _ = ax.legend(loc='best', prop={'size': 9})
-        #     _ = ax.set_xlabel('Time (days)')
-        #     _ = ax.set_ylabel('Concentration (mg/L)')
-        # # _ = axes[1].set_ylim([1e-5, 1e4])
-        # _ = axes[1].set_xscale('log')
-        # _ = axes[1].set_yscale('log')
-        # _ = fig.tight_layout()
-        # _ = fig.savefig('results/plots/measured_data.png', dpi=72)
