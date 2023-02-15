@@ -4,7 +4,7 @@ import numpy as np
 
 def load_csv( csv_name='measured_data' ):
     matrix = []
-    with open( os.path.join('data', f'{csv_name}.csv'), 'r', encoding='utf-8-sig') as file:
+    with open( os.path.join('data', 'leaching', f'{csv_name}.csv'), 'r', encoding='utf-8-sig') as file:
         for i, line in enumerate(file):
             if i == 0:
                 header = list( line.strip().split(',') )

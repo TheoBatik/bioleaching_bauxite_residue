@@ -77,19 +77,21 @@ class RateOptimiser:
             # {'Fe2O3': 3, 'C6H8O7': 6}
             # Oxalic acid
             {'ScO(OH)': 1, 'C2H2O4': 1},
-            # {'Fe2O3': 1, 'C2H2O4': 6},
+            {'Fe2O3': 1, 'C2H2O4': 3},
+            {'Al2O3': 1, 'C2H2O4': 3}
         ]
         products = [
             # Citric acid
             {'Sc': 1, 'C6H7O7': 3 }, #,'H2O': 2}, # }, 
             # {'Sc': 2, 'C6H6O7': 3 }, #, 'H2O': 4},
             # {'Sc': 3, 'C6H5O7': 3 }, #, 'H2O': 6},
-            {'Fe': 2, 'C6H7O7': 3 }, # 'H2O': 3}, #
+            {'Fe': 2, 'C6H7O7': 6 }, # 'H2O': 3}, #
             # {'Fe': 2, 'C6H6O7': 3 }, #, 'H2O': 3},
             # {'Fe': 6, 'C6H5O7': 6 } #, 'H2O': 9}
             # Oxalic acid
             {'Sc': 1, 'C2HO4': 1 }, #, 'H2O': 2},
-            # {'Fe': 2, 'C6H7O7': 6 }, #, 'H2O': 3},
+            {'Fe': 2, 'C2H04': 3 }, #, 'H2O': 3},
+            {'Al': 2, 'C2HO4': 3}
         ]
 
         # Number of reactions (one-directional)
@@ -264,10 +266,10 @@ class RateOptimiser:
 
         # Save results to .csv
         print( 'Predicted states', states_p.yout )
-        np.savetxt('results/states/predicted_states.csv', states_p.yout, delimiter=',')
-        np.savetxt('results/states/species.csv', self.species, fmt='%s', delimiter=',')
-        np.savetxt('results/states/eval_times.csv', states_p.xout, delimiter=',')
-        np.savetxt('results/kinetics/optimal_rate_params.csv', self.optimal_rate_params, delimiter=',')
+        np.savetxt('results/leaching/states/predicted_states.csv', states_p.yout, delimiter=',')
+        np.savetxt('results/leaching/states/species.csv', self.species, fmt='%s', delimiter=',')
+        np.savetxt('results/leaching/states/eval_times.csv', states_p.xout, delimiter=',')
+        np.savetxt('results/leaching/kinetics/optimal_rate_params.csv', self.optimal_rate_params, delimiter=',')
 
         # Plot predicted and measured states
         if ignore is None:
@@ -325,4 +327,4 @@ class RateOptimiser:
         # Tidy and save
         fig.suptitle( 'The predicted and measured concentrations over time', fontsize=16 )
         _ = fig.tight_layout()
-        _ = fig.savefig('results/plots/test_k_optimal_predicted.png', dpi=72)
+        _ = fig.savefig('results/leaching/plots/test_k_optimal_predicted.png', dpi=72)
