@@ -256,7 +256,7 @@ class RateOptimiser:
             # Given evaluation times, derive new prediction 
             ode_system, _ = get_odesys( self.reaction_system )
             states_p = ode_system.integrate(
-                eval_times, #sorted(np.concatenate((np.linspace(0, 23), np.logspace(-8, 1)))), #self.eval_times, # evaluation times
+                eval_times, 
                 self.states_0, # initial states
                 atol=self.atol,
                 rtol=self.rtol
