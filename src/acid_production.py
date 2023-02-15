@@ -5,7 +5,7 @@
 from src.rate_optimiser import custom_hop
 from scipy.integrate import solve_ivp
 from scipy.optimize import minimize, basinhopping
-# from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -18,12 +18,13 @@ r = 0.29370
 # Initial guess of fixable parameters
 class AcidAniger:
     
-    def input( self, measurements ):
+    def input( self, measurements, var_names ):
 
         # Set input attributes
         setattr( self, 'states_m', measurements[0][:, 1:] ) # measured states
-        setattr( self, 'species_m', measurements[1][1:] ) # measured species
+        setattr( self, 'vars_m', measurements[1][1:] ) # measured variables
         setattr( self, 'eval_times', measurements[0][:, 0] ) # times at which to evaluate the soln
+        setattr( self, 'var_names', var_names ) # times at which to evaluate the soln
 
         # Set maxium of the measured states
         setattr( self, 'max_measured', np.max( self.states_m ) )
@@ -122,23 +123,73 @@ class AcidAniger:
             callback=None
         ).x 
 
+        # Get optimal predicted states
+        states_p = self.solve_system( optimal_params )
+        
+        # Set results as attributes
+        setattr( self, 'popt', optimal_params )
+        setattr( self, 'states_p', states_p )
+
         return optimal_params
         
 
-    # def fit( self, params_0 ):
+    def save_results( self, eval_times=None, ignore=None, predicted=True, measured=True ): 
         
-    #     f = self.solve_flat_visible_system
-            
-    #     # xdata = np.tile( self.eval_times, 3 ) 
-    #     ydata = self.states_m.flatten()
-    #     xdata = []
-    #     # for i in range(0,3):
-            
-    #     popt, pcov = curve_fit(
-    #         f, 
-    #         xdata=xdata,
-    #         ydata=ydata,
-    #         p0=params_0
-    #     )
+        # Update predicted states, if required
+        if eval_times is None:
+            # Use existing attributes
+            eval_times = self.eval_times
+            states_p = self.states_p
+        else:
+            # Given evaluation times, derive new prediction 
+            states_p = self.solve_system( self.optimal_params, t_eval=eval_times )
+        
+        # Plot predicted and measured states
+        if ignore is None:
+            ignore = [ s for s in self.var_names if s not in self.vars_m]
+        colours = plt.cm.rainbow(np.linspace(0, 1, len(self.var_names)))
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        for ax in axes:
+            # Plot predicted states
+            for i, s in enumerate( self.var_names ):
+                if s not in ignore:
+                    if predicted:
+                        ax.plot( 
+                            self.eval_times,
+                            states_p[i, :],
+                            linestyle='dashed',
+                            label=s + ' (predicted)',
+                            c=colours[i]
+                    )
+                    if measured and s in self.vars_m:
+                        j = self.vars_m.index(s)
+                        ax.plot( 
+                            self.eval_times,
+                            self.states_m[:, j],
+                            linestyle = 'None',
+                            marker='.',
+                            ms=6,
+                            label=s + ' (measured)',
+                            c=colours[i]
+                        )
+        # Set legend and axes' lables
+            _ = ax.legend(loc='best', prop={'size': 9})
+            _ = ax.set_xlabel('Time (days)')
+            _ = ax.set_ylabel('Concentration (mg/L)')
+        # Adjust 2nd axis scale
+        _ = axes[1].set_xscale('log')
+        _ = axes[1].set_yscale('log')
+        axes[0].set_title('Normal scale', loc='left')
+        axes[1].set_title('Log scale', loc='left')
+        # Tidy and save
+        fig.suptitle( 'The predicted and measured concentrations over time', fontsize=16 )
+        _ = fig.tight_layout()
+        _ = fig.savefig('results/acid_production/plots/test_k_optimal_predicted.png', dpi=72)
+    #     
 
-    #     return popt, pcov
+    #     # Save results to .csv
+    #     print( 'Predicted states', states_p.yout )
+    #     np.savetxt('results/states/predicted_states.csv', states_p.yout, delimiter=',')
+    #     np.savetxt('results/states/vars.csv', self.vars, fmt='%s', delimiter=',')
+    #     np.savetxt('results/states/eval_times.csv', states_p.xout, delimiter=',')
+    #     np.savetxt('results/kinetics/optimal_rate_params.csv', self.optimal_rate_params, delimiter=',')
