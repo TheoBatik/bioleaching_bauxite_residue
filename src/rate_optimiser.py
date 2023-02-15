@@ -78,7 +78,8 @@ class RateOptimiser:
             # Oxalic acid
             {'ScO(OH)': 1, 'C2H2O4': 1},
             {'Fe2O3': 1, 'C2H2O4': 3},
-            {'Al2O3': 1, 'C2H2O4': 3}
+            {'Al2O3': 1, 'C2H2O4': 3},
+            {'CaO': 1, 'C2H2O4': 1}
         ]
         products = [
             # Citric acid
@@ -91,7 +92,8 @@ class RateOptimiser:
             # Oxalic acid
             {'Sc': 1, 'C2HO4': 1 }, #, 'H2O': 2},
             {'Fe': 2, 'C2H04': 3 }, #, 'H2O': 3},
-            {'Al': 2, 'C2HO4': 3}
+            {'Al': 2, 'C2HO4': 3},
+            {'Ca': 1, 'C2HO4': 1 }
         ]
 
         # Number of reactions (one-directional)
