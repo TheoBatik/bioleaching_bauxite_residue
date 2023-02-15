@@ -2,8 +2,9 @@
 
 
 # Imports
+from src.rate_optimiser import custom_hop
 from scipy.integrate import solve_ivp
-from scipy.optimize import minimize
+from scipy.optimize import minimize, basinhopping
 # from scipy.optimize import curve_fit
 import numpy as np
 
@@ -46,17 +47,16 @@ class AcidAniger:
         s = f[1]
 
         # Biomass production rate
-        u = umax*(s/(Ks*x+s))
-        dxdt = u*x
+        dxdt = umax*(s/(Ks*x+s)) * x
+
         # Substrate consumption rate
-        rs = -q * dxdt - r * x
-        dsdt = rs
+        dsdt = -q * dxdt - r * x
+
         # Acid production rates
         dpdt = [ args[i] * dxdt + args[i+1] * x for i in [0, 2, 4] ]
         
-        # ODE system
-        dfdt = [dxdt, dsdt, *dpdt]
-        return dfdt
+        # Return ODE system
+        return [dxdt, dsdt, *dpdt]
 
 
     def set_initial_conditions( self, f0 ):
@@ -77,8 +77,8 @@ class AcidAniger:
             self.ode_system, # system to solve
             [t_eval[0], t_eval[-1]], # time span
             self.f0, # initial conditions
-            method='RK45',
-            t_eval=t_eval,
+            method='Radau', # Solver method
+            t_eval=t_eval, # Soln evaluation times
             args=params, # parameters
             dense_output=False
         ).y
@@ -99,7 +99,7 @@ class AcidAniger:
         return net_error 
 
 
-    def optimise( self, params_0, display=False ):
+    def optimise_min( self, params_0, display=False ):
 
         optimal_params = minimize(self.cost, params_0, method='L-BFGS-B' ) #, tol=1e-6)
         
@@ -108,7 +108,22 @@ class AcidAniger:
 
         return optimal_params
 
+    
+    def optimise_basinhop( self, params, n_hops=3, display=False ):
 
+        optimal_params = basinhopping(
+            self.cost, 
+            params, 
+            minimizer_kwargs={'method':'L-BFGS-B'},
+            # T=None,
+            niter=n_hops, 
+            disp=display, 
+            take_step=custom_hop,
+            callback=None
+        ).x 
+
+        return optimal_params
+        
 
     # def fit( self, params_0 ):
         
