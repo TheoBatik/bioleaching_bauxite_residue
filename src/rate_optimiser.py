@@ -79,7 +79,10 @@ class RateOptimiser:
             {'ScO(OH)': 1, 'C2H2O4': 1},
             {'Fe2O3': 1, 'C2H2O4': 3},
             {'Al2O3': 1, 'C2H2O4': 3},
-            {'CaO': 1, 'C2H2O4': 1}
+            {'CaO': 1, 'C2H2O4': 1},
+            {'TiO2': 1, 'C2H2O4': 2},
+            # Iron(II) Oxalate formation
+            {'Fe': 1, 'C2O4': 1}
         ]
         products = [
             # Citric acid
@@ -90,10 +93,13 @@ class RateOptimiser:
             # {'Fe': 2, 'C6H6O7': 3 }, #, 'H2O': 3},
             # {'Fe': 6, 'C6H5O7': 6 } #, 'H2O': 9}
             # Oxalic acid
-            {'Sc': 1, 'C2HO4': 1 }, #, 'H2O': 2},
-            {'Fe': 2, 'C2H04': 3 }, #, 'H2O': 3},
-            {'Al': 2, 'C2HO4': 3},
-            {'Ca': 1, 'C2HO4': 1 }
+            {'Sc': 1, 'C2O4': 1, 'H+': 1 }, #, 'H2O': 2},
+            {'Fe': 2, 'C204': 3, 'H+': 1 }, #, 'H2O': 3},
+            {'Al': 2, 'C2O4': 3, 'H+': 1 },
+            {'Ca': 1, 'C2O4': 1, 'H+': 1 },
+            {'Ti': 1, 'C2O4': 1},
+            # Iron(II) Oxalate formation
+            {'FeC2O4'}
         ]
 
         # Number of reactions (one-directional)
