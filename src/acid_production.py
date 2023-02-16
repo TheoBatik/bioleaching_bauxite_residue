@@ -47,17 +47,20 @@ class AcidAniger:
         x = f[0]
         s = f[1]
 
-        # Biomass production rate
-        dxdt = umax*(s/(Ks*x+s)) * x
+        if s <= 0:
+            return [0 for i in range(0,5)]
+        else:
+            # Biomass production rate
+            dxdt = umax*(s/(Ks*x+s)) * x
 
-        # Substrate consumption rate
-        dsdt = -q * dxdt - r * x
+            # Substrate consumption rate
+            dsdt = -q * dxdt - r * x
 
-        # Acid production rates
-        dpdt = [ args[i] * dxdt + args[i+1] * x for i in [0, 2, 4] ]
-        
-        # Return ODE system
-        return [dxdt, dsdt, *dpdt]
+            # Acid production rates
+            dpdt = [ args[i] * dxdt + abs(args[i+1]) * x for i in [0, 2, 4] ]
+            
+            # Return ODE system
+            return [dxdt, dsdt, *dpdt]
 
 
     def set_initial_conditions( self, f0 ):
@@ -142,7 +145,7 @@ class AcidAniger:
             states_p = self.states_p
         else:
             # Given evaluation times, derive new prediction 
-            states_p = self.solve_system( self.optimal_params, t_eval=eval_times )
+            states_p = self.solve_system( self.popt, t_eval=eval_times )
         
         # Plot predicted and measured states
         if ignore is None:
@@ -155,7 +158,7 @@ class AcidAniger:
                 if s not in ignore:
                     if predicted:
                         ax.plot( 
-                            self.eval_times,
+                            eval_times,
                             states_p[i, :],
                             linestyle='dashed',
                             label=s + ' (predicted)',
@@ -164,7 +167,7 @@ class AcidAniger:
                     if measured and s in self.vars_m:
                         j = self.vars_m.index(s)
                         ax.plot( 
-                            self.eval_times,
+                            eval_times,
                             self.states_m[:, j],
                             linestyle = 'None',
                             marker='.',

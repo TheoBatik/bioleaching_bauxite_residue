@@ -66,17 +66,10 @@ print( 'Optimal output\n', f_optimal )
 #------------------------------------------------------------------------------------------
 
 # Save results
-a.save_results( ignore=[] )#  s for s in a.var_names if s != 'Substrate' ] )
-
-# # Fit solution to measured data
-# # popt, pcov = a.fit( params_0 )
-
-# import matplotlib.pyplot as plt
-# print(t.shape)
-
-# plt.figure()
-# for i in range(0, 5):
-#     plt.plot( t, f_optimal[i, :] )
-# for i in range(0,3):
-#     plt.plot( a.eval_times, a.states_m[:, i])
-# plt.show()
+t = np.linspace( 0, 200, 200 )
+a.save_results( 
+    ignore=[], #  [s for s in a.var_names if s != 'Substrate' ] )
+    # eval_times=t,
+    measured=True,
+    predicted=True
+    )
