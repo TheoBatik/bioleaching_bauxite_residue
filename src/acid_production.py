@@ -48,16 +48,16 @@ class AcidAniger:
         s = f[1]
 
         if s <= 0:
-            return [0 for i in range(0,5)]
+            return np.zeros(5)
         else:
             # Biomass production rate
-            dxdt = umax*(s/(Ks*x+s)) * x
+            dxdt = args[0]*(s/(args[1]*x+s)) * x
 
             # Substrate consumption rate
-            dsdt = -q * dxdt - r * x
+            dsdt = - args[2] * dxdt - args[3] * x
 
             # Acid production rates
-            dpdt = [ args[i] * dxdt + abs(args[i+1]) * x for i in [0, 2, 4] ]
+            dpdt = [ args[i] * dxdt + args[i+1] * x for i in [4, 6, 8] ]
             
             # Return ODE system
             return [dxdt, dsdt, *dpdt]
