@@ -22,14 +22,24 @@ print('Evaluation times\n', a.eval_times)
 
 # Set initial conditions, model parameters, and var_names
 
-x0 = 4 # mg/L 
-s0 = 125000#625000 # [substrate] at t=0 (sucrose) mg/L
+x0 = 10 # mg/L 
+s0 = 625000 # [substrate] at t=0 (sucrose) mg/L # 125000#
 p0 = [ a.states_m[0, i] for i in range(0,3) ] # mg/L
 f0 = [x0, s0, *p0]
 a.set_initial_conditions( f0 )
 
-params_0 = ( 0.5, 0.01704, 1, 0.2, 0.2, 0.4 )
-
+params_0 = ( 
+    8.664, # mumax, /day
+    0.021447, # Ks, mg/L
+    2.17680, # q, substrate consumption factor on dxdt
+    0.29370, # r, substrate consumption factor on x
+    0.5,
+    0.01704, 
+    1, 
+    0.2, 
+    0.2, 
+    0.4
+)
 
 
 print( 'Initial conditions\n', a.f0 )
@@ -43,7 +53,7 @@ print( 'Initial conditions\n', a.f0 )
 #     ))
 # )
 f = a.solve_system( params_0 ) #, t_eval=t )
-print(f)
+print(f.shape)
 
 # cost = a.cost( params_0 )
 # # print( 'Cost', cost )
@@ -60,13 +70,13 @@ optimal_params = a.optimise_basinhop(
     display=True 
 )
 print( 'Optimal parameters\n', optimal_params )
-f_optimal = a.solve_system( optimal_params )
-print( 'Optimal output\n', f_optimal )
+# f_optimal = a.solve_system( optimal_params )
+# print( 'Optimal output\n', f_optimal )
 
-#------------------------------------------------------------------------------------------
+# #------------------------------------------------------------------------------------------
 
 # Save results
-t = np.linspace( 0, 200, 200 )
+# t = np.linspace( 0, 200, 200 )
 a.save_results( 
     ignore=[], #  [s for s in a.var_names if s != 'Substrate' ] )
     # eval_times=t,
