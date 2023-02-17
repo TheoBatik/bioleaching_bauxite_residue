@@ -20,8 +20,8 @@ for rxn in ropter.reaction_system.rxns:
 #------------------------------------------------------------------------------------------
 
 ropter.input( 
-    load_csv( csv_name='measured_data_oxalic_2' ),
-    fetch_initial_states( ropter.species, csv_name='c0_base_test_oxalic' ) 
+    load_csv( csv_name='leaching/measured_data_yttrium' ),
+    fetch_initial_states( ropter.species, csv_name='leaching/c0_base_yttrium' ) 
 ) 
 
 #------------------------------------------------------------------------------------------

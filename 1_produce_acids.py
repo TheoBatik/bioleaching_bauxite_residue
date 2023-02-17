@@ -67,8 +67,6 @@ else:
 print( 'Optimal parameters\n', optimal_params )
 print( 'Cost\n', a.cost( optimal_params ) )
 
-
-
 # #------------------------------------------------------------------------------------------
 
 # Save results
