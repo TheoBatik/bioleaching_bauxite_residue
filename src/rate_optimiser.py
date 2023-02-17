@@ -69,51 +69,51 @@ class RateOptimiser:
         # Stoichiometric coefficients of reactants and products
         reactants = [
             # Citric acid consumption
-            {'ScO(OH)': 1, 'C6H8O7': 3},
-            # {'ScO(OH)': 2, 'C6H8O7': 3},
+            {'ScO(OH)': 1, 'C6H8O7': 3}, # Sc Oxide
+            # {'ScO(OH)': 2, 'C6H8O7': 3}, 
             # {'ScO(OH)': 3, 'C6H8O7': 3},
-            {'Y2O3': 1, 'C6H8O7': 6}, # Yttrium
+            # {'Y2O3': 1, 'C6H8O7': 6}, # Yttrium Oxide
             {'Fe2O3': 1, 'C6H8O7': 6},
             # {'Fe2O3': 1, 'C6H8O7': 3},
             # {'Fe2O3': 3, 'C6H8O7': 6}
-            {'Al2O3': 1, 'C6H8O7': 3},
-            {'CaO': 1, 'C6H8O7': 1},
-            {'TiO2': 1, 'C6H8O7': 2},
+            # {'Al2O3': 1, 'C6H8O7': 3},
+            # {'CaO': 1, 'C6H8O7': 1},
+            # {'TiO2': 1, 'C6H8O7': 2},
             # Oxalic acid consumption
-            {'ScO(OH)': 1, 'C2H2O4': 1},
-            {'Fe2O3': 1, 'C2H2O4': 3},
-            {'Al2O3': 1, 'C2H2O4': 3},
-            {'CaO': 1, 'C2H2O4': 1},
-            {'TiO2': 1, 'C2H2O4': 2},
+            # {'ScO(OH)': 1, 'C2H2O4': 1},
+            # {'Fe2O3': 1, 'C2H2O4': 3},
+            # {'Al2O3': 1, 'C2H2O4': 3},
+            # {'CaO': 1, 'C2H2O4': 1},
+            # {'TiO2': 1, 'C2H2O4': 2},
             # Gluconic acid consumption
-            {'Fe2O3': 1, 'C6H12O7': 6},
-            # Iron(II) Oxalate formation
-            {'Fe': 1, 'C2O4': 1},
+            # {'Fe2O3': 1, 'C6H12O7': 6},
+            # Sc Oxalate formation
+            # {'Sc': 1, 'C2O4': 1},
             # Acid production
             {'C12H22O11': 1}
         ]
         products = [
             # Citric acid consumption
-            {'Sc': 1, 'C6H7O7': 3 }, #,'H2O': 2}, # }, 
+            {'Sc': 1 }, #, 'C6H7O7': 3 }, #,'H2O': 2}, # }, 
             # {'Sc': 2, 'C6H6O7': 3 }, #, 'H2O': 4},
             # {'Sc': 3, 'C6H5O7': 3 }, #, 'H2O': 6},
-            {'Y': 2, 'C6H7O7': 6 }, # 'H2O': 3}, # Yttrium
-            {'Fe': 2, 'C6H7O7': 6 }, # 'H2O': 3}, #
+            # {'Y': 2 }, #, 'C6H7O7': 6 }, # 'H2O': 3}, # Yttrium
+            {'Fe': 2 }, #, 'C6H7O7': 6 }, # 'H2O': 3}, #
             # {'Fe': 2, 'C6H6O7': 3 }, #, 'H2O': 3},
             # {'Fe': 6, 'C6H5O7': 6 } #, 'H2O': 9}
-            {'Al': 2, 'C6H7O7': 3}, #, 'H+': 3 },
-            {'Ca': 1, 'C6H7O7': 1}, #, 'H+': 3 },
-            {'Ti': 1, 'C6H7O7': 1}, #, 'H+': 3},
+            # {'Al': 2, 'C6H7O7': 3}, #, 'H+': 3 },
+            # {'Ca': 1, 'C6H7O7': 1}, #, 'H+': 3 },
+            # {'Ti': 1, 'C6H7O7': 1}, #, 'H+': 3},
             # Oxalic acid consumption
-            {'Sc': 1, 'C2O4': 1 }, #, 'H+': 2 }, #, 'H2O': 2},
-            {'Fe': 2, 'C204': 3 }, #, 'H+': 6 }, #, 'H2O': 3},
-            {'Al': 2, 'C2O4': 3 }, #, 'H+': 6 },
+            # {'Sc': 1, 'C2O4': 1 }, #, 'H+': 2 }, #, 'H2O': 2},
+            # {'Fe': 2, 'C204': 3 }, #, 'H+': 6 }, #, 'H2O': 3},
+            # {'Al': 2, 'C2O4': 3 }, #, 'H+': 6 },
             # {'Ca': 1, 'C2O4': 1 } #, 'H+': 2 },
             # {'Ti': 1, 'C2O4': 1 } #, 'H+': 2},
             # Gluconic acid consumption
-            {'Fe': 2, 'C6H11O7': 6, 'H+': 2},
-            # Iron(II) Oxalate formation
-            {'FeC2O4'},
+            # {'Fe': 2, 'C6H11O7': 6, 'H+': 2},
+            # Sc Oxalate formation
+            # {'ScC2O4'},
             # Acid production
             {'C6H8O7': 1}
         ]
@@ -226,6 +226,7 @@ class RateOptimiser:
         random_rates = lambda low, high: \
             np.random.uniform( low=low, high=high, size=self.num_rxns )
         
+        fails = 0
         # Loop over epochs
         while n < n_epochs:
             
@@ -233,7 +234,7 @@ class RateOptimiser:
                 print(f'\nEpoch {n+1}:') 
 
             rate_param_ex = random_rates(-2, 1.5)
-         
+
             try:
                 rate_params_ex = basinhopping(
                     self.objective, 
@@ -247,7 +248,10 @@ class RateOptimiser:
                 ).x 
             except:
                 print('Basinhopping failed.\n')
-                continue
+                n -= 1
+                fails += 1
+                if fails > 5:
+                    break
             finally:
                 n += 1
             
@@ -306,7 +310,7 @@ class RateOptimiser:
                 if s not in ignore:
                     if predicted:
                         ax.plot( 
-                            self.eval_times,
+                            eval_times,
                             states_p.yout[:, i],
                             linestyle='dashed',
                             label=s + ' (predicted)',
