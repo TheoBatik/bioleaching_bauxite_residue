@@ -57,7 +57,7 @@ class AcidAniger:
             dsdt = - args[2] * dxdt - args[3] * x
 
             # Acid production rates
-            dpdt = [ args[i] * dxdt + args[i+1] * x for i in [4, 6, 8] ]
+            dpdt = [ args[i] * dxdt + abs(args[i+1]) * x for i in [4, 6, 8] ]
             
             # Return ODE system
             return [dxdt, dsdt, *dpdt]
@@ -136,7 +136,16 @@ class AcidAniger:
         return optimal_params
         
 
-    def save_results( self, eval_times=None, ignore=None, predicted=True, measured=True ): 
+    def save_results( 
+        self, 
+        eval_times=None, 
+        ignore=None, 
+        predicted=True, 
+        measured=True,
+        plot_name='',
+        plot_name_stem='Organic acid production by A. niger:'
+        # timestamp=False
+        ): 
         
         # Update predicted states, if required
         if eval_times is None:
@@ -151,7 +160,7 @@ class AcidAniger:
         if ignore is None:
             ignore = [ s for s in self.var_names if s not in self.vars_m]
         colours = plt.cm.rainbow(np.linspace(0, 1, len(self.var_names)))
-        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        fig, axes = plt.subplots(1, 2, figsize=(16, 5))
         for ax in axes:
             # Plot predicted states
             for i, s in enumerate( self.var_names ):
@@ -167,7 +176,7 @@ class AcidAniger:
                     if measured and s in self.vars_m:
                         j = self.vars_m.index(s)
                         ax.plot( 
-                            eval_times,
+                            self.eval_times,
                             self.states_m[:, j],
                             linestyle = 'None',
                             marker='.',
@@ -175,19 +184,26 @@ class AcidAniger:
                             label=s + ' (measured)',
                             c=colours[i]
                         )
+
         # Set legend and axes' lables
-            _ = ax.legend(loc='best', prop={'size': 9})
+
+            _ = ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+            # _ = ax.legend(loc='best', prop={'size': 9})
             _ = ax.set_xlabel('Time (days)')
             _ = ax.set_ylabel('Concentration (mg/L)')
-        # Adjust 2nd axis scale
+        # Adjust titles and scales
         _ = axes[1].set_xscale('log')
         _ = axes[1].set_yscale('log')
         axes[0].set_title('Normal scale', loc='left')
         axes[1].set_title('Log scale', loc='left')
-        # Tidy and save
-        fig.suptitle( 'The predicted and measured concentrations over time', fontsize=16 )
+
+        # Tidy and Save
+        _ = axes[0].legend().remove()
+        suptitle = plot_name_stem + ' predicted and measured concentrations over time ' + plot_name 
+        fig.suptitle( suptitle, fontsize=16 )
         _ = fig.tight_layout()
-        _ = fig.savefig('results/acid_production/plots/test_k_optimal_predicted.png', dpi=72)
+        save_at = 'results/acid_production/plots/' + plot_name_stem + ' ' + plot_name + '.png'
+        _ = fig.savefig( save_at, dpi=72 )
     #     
 
     #     # Save results to .csv
