@@ -60,63 +60,11 @@ class RateOptimiser:
         self.reversible = reversible
 
 #------------------------------------------------------------------------------------------
-    def set_system( self ):
+    def set_system( self, reactants, products ):
         '''
         Sets the reaction system (:class:`ReactionSystem`)
         for the hard-coded reactions (:class:`Reaction`)
         '''
-
-        # Stoichiometric coefficients of reactants and products
-        reactants = [
-            # Citric acid consumption
-            {'ScO(OH)': 1, 'C6H8O7': 3}, # Sc Oxide
-            # {'ScO(OH)': 2, 'C6H8O7': 3}, 
-            # {'ScO(OH)': 3, 'C6H8O7': 3},
-            # {'Y2O3': 1, 'C6H8O7': 6}, # Yttrium Oxide
-            {'Fe2O3': 1, 'C6H8O7': 6},
-            # {'Fe2O3': 1, 'C6H8O7': 3},
-            # {'Fe2O3': 3, 'C6H8O7': 6}
-            # {'Al2O3': 1, 'C6H8O7': 3},
-            # {'CaO': 1, 'C6H8O7': 1},
-            # {'TiO2': 1, 'C6H8O7': 2},
-            # Oxalic acid consumption
-            # {'ScO(OH)': 1, 'C2H2O4': 1},
-            # {'Fe2O3': 1, 'C2H2O4': 3},
-            # {'Al2O3': 1, 'C2H2O4': 3},
-            # {'CaO': 1, 'C2H2O4': 1},
-            # {'TiO2': 1, 'C2H2O4': 2},
-            # Gluconic acid consumption
-            # {'Fe2O3': 1, 'C6H12O7': 6},
-            # Sc Oxalate formation
-            # {'Sc': 1, 'C2O4': 1},
-            # Acid production
-            {'C12H22O11': 1}
-        ]
-        products = [
-            # Citric acid consumption
-            {'Sc': 1 }, #, 'C6H7O7': 3 }, #,'H2O': 2}, # }, 
-            # {'Sc': 2, 'C6H6O7': 3 }, #, 'H2O': 4},
-            # {'Sc': 3, 'C6H5O7': 3 }, #, 'H2O': 6},
-            # {'Y': 2 }, #, 'C6H7O7': 6 }, # 'H2O': 3}, # Yttrium
-            {'Fe': 2 }, #, 'C6H7O7': 6 }, # 'H2O': 3}, #
-            # {'Fe': 2, 'C6H6O7': 3 }, #, 'H2O': 3},
-            # {'Fe': 6, 'C6H5O7': 6 } #, 'H2O': 9}
-            # {'Al': 2, 'C6H7O7': 3}, #, 'H+': 3 },
-            # {'Ca': 1, 'C6H7O7': 1}, #, 'H+': 3 },
-            # {'Ti': 1, 'C6H7O7': 1}, #, 'H+': 3},
-            # Oxalic acid consumption
-            # {'Sc': 1, 'C2O4': 1 }, #, 'H+': 2 }, #, 'H2O': 2},
-            # {'Fe': 2, 'C204': 3 }, #, 'H+': 6 }, #, 'H2O': 3},
-            # {'Al': 2, 'C2O4': 3 }, #, 'H+': 6 },
-            # {'Ca': 1, 'C2O4': 1 } #, 'H+': 2 },
-            # {'Ti': 1, 'C2O4': 1 } #, 'H+': 2},
-            # Gluconic acid consumption
-            # {'Fe': 2, 'C6H11O7': 6, 'H+': 2},
-            # Sc Oxalate formation
-            # {'ScC2O4'},
-            # Acid production
-            {'C6H8O7': 1}
-        ]
 
         # Number of reactions (one-directional)
         num_rxns = len( reactants )
@@ -203,10 +151,17 @@ class RateOptimiser:
             self.states_0,  # initial states
             atol=self.atol, 
             rtol=self.rtol
-        ).yout
+        )
+
+        # print( 'states_p', states_p )
+        
+        states_p = states_p.yout
         
         # Derive the Normalised Visible states from the Predicted states
         states_nvp = np.delete( states_p, self.ihs, 1 ) / self.max_measured
+        # print( 'states_nvp', states_nvp )
+        # print( 'states_nm', self.states_nm )
+
         del states_p
 
         # Calculate the net error: sum (over time) of the discrepencies squared
@@ -239,7 +194,7 @@ class RateOptimiser:
                 rate_params_ex = basinhopping(
                     self.objective, 
                     rate_param_ex, 
-                    minimizer_kwargs={'method':'L-BFGS-B'},
+                    minimizer_kwargs={'method': 'L-BFGS-B'},
                     # T=None,
                     niter=n_hops, 
                     disp=display, 
@@ -247,7 +202,7 @@ class RateOptimiser:
                     callback=None
                 ).x 
             except:
-                print('Basinhopping failed.\n')
+                print(' Basinhopping failed.\n')
                 n -= 1
                 fails += 1
                 if fails > 5:
@@ -270,12 +225,24 @@ class RateOptimiser:
 
         # Set predicted states attribute
         setattr( self, 'states_p', states_p )
+        
+        if display:
+            print( 'Optimal predicted states\n', states_p)
 
         return rate_params_ex
 
 #------------------------------------------------------------------------------------------
 
-    def save_results( self, eval_times=None, ignore=None, predicted=True, measured=True ): 
+    def save_results( 
+        self, 
+        eval_times=None,
+        ignore=None, 
+        predicted=True, 
+        measured=True,
+        plot_name='',
+        plot_name_stem='Leaching of Bauxite Residue:'
+        # timestamp=False
+        ): 
 
         # Update predicted states, if required
         if eval_times is None:
@@ -344,15 +311,21 @@ class RateOptimiser:
                 #             label=s + ' (measured)'
                 #         )
             # Set legend and axes' lables
-            _ = ax.legend(loc='best', prop={'size': 9})
+            _ = ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+
             _ = ax.set_xlabel('Time (days)')
             _ = ax.set_ylabel('Concentration (mg/L)')
-        # Adjust 2nd axis scale
+        # Adjust titles and scales
         _ = axes[1].set_xscale('log')
         _ = axes[1].set_yscale('log')
         axes[0].set_title('Normal scale', loc='left')
         axes[1].set_title('Log scale', loc='left')
-        # Tidy and save
-        fig.suptitle( 'The predicted and measured concentrations over time', fontsize=16 )
+        
+        # Tidy and Save
+        _ = axes[0].legend().remove()
+        plot_name_middle = ' predicted and measured concentrations over time '
+        suptitle = plot_name_stem + plot_name_middle + plot_name 
+        fig.suptitle( suptitle, fontsize=16 )
         _ = fig.tight_layout()
-        _ = fig.savefig('results/leaching/plots/test_k_optimal_predicted.png', dpi=72)
+        save_at = 'results/leaching/plots/' + plot_name_stem + plot_name_middle + plot_name + '.png'
+        _ = fig.savefig( save_at, dpi=72 )

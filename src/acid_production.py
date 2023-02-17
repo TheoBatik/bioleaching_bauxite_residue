@@ -102,16 +102,6 @@ class AcidAniger:
 
         return net_error 
 
-
-    def optimise_min( self, params_0, display=False ):
-
-        optimal_params = minimize(self.cost, params_0, method='L-BFGS-B' ) #, tol=1e-6)
-        
-        if display:
-            print( 'Cost function value at:', self.cost( optimal_params ) )
-
-        return optimal_params
-
     
     def optimise_basinhop( self, params, n_hops=3, display=False ):
 
@@ -188,7 +178,6 @@ class AcidAniger:
         # Set legend and axes' lables
 
             _ = ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
-            # _ = ax.legend(loc='best', prop={'size': 9})
             _ = ax.set_xlabel('Time (days)')
             _ = ax.set_ylabel('Concentration (mg/L)')
         # Adjust titles and scales
