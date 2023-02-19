@@ -18,7 +18,7 @@ reactants = [
     # # Iron(II) Oxalate formation
     # {'Fe': 1, '(C2O4)2-': 1},
     # Sc Oxalate formation
-    {'Sc': 2, '(C2O4)2-': 3},
+    # {'Sc3+': 2, '(C2O4)2-': 3},
     # # Acid production
     # {'C12H22O11': 1}
 ]
@@ -41,7 +41,7 @@ products = [
     # # Iron(II) Oxalate formation
     # {'FeC2O4'},
     # Sc Oxalate formation
-    {'Sc2(C2O4)'},
+    # {'Sc2(C2O4)'},
     # # Acid production
     # {'C6H8O7': 1}
 ]
