@@ -78,22 +78,20 @@ print( optimal_k )
 #         np.logspace(-2, -0.1, base=2, num=6),
 #         ))
 #     )
-t = np.linspace( 0, int(ropter.eval_times[-1]), 30 )
+t = np.linspace( 0, int(ropter.eval_times[-1]), 100 )
 
 
 # All quantities
 ropter.save_results(
-    eval_times=None,#t,
-        # 
-    # ignore=[],
+    eval_times=t,
     predicted=True, 
     measured=True,
-    plot_name='(all quantities)'
+    plot_name='(all measured quantities)'
 )
 
 # REE's
 ropter.save_results(
-    eval_times=None,#t,
+    eval_times=t,
     ignore=[ s for s in ropter.species if s not in ['Sc3+', 'Y3+'] ],
     predicted=True, 
     measured=True,
@@ -103,7 +101,7 @@ ropter.save_results(
 # IC's
 ics = [ 'Fe3+', 'Al3+', 'Ti4+', 'Ca2+']
 ropter.save_results(
-    eval_times=None,#t,
+    eval_times=t,
     ignore=[ s for s in ropter.species if s not in ics ],
     predicted=True, 
     measured=True,
@@ -114,7 +112,7 @@ ropter.save_results(
 elements = [ 'Fe3+', 'Al3+', 'Ti4+', 'Ca2+', 'Sc3+', 'Y3+']
 for element in elements:
     ropter.save_results(
-        eval_times=None,#t,
+        eval_times=t,
         ignore=[ s for s in ropter.species if s not in [ element ] ],
         predicted=True, 
         measured=True,
